@@ -20,6 +20,7 @@ arg_parser.add_argument("-k", "--keep-temp", help="keep extracted files in asset
 arg_parser.add_argument("-r", "--store-raw", help="store raw json object in 'raw_objects' database table", action='store_true')
 arg_parser.add_argument("-d", "--debug", help="enable pdb debugger to break when ctrl-c is pressed", action='store_true')
 arg_parser.add_argument("-v", "--verbose", help="display verbose script logging", action='store_true')
+arg_parser.add_argument("-s", "--strict", help="enabled strict data parsing. In non-strict mode, parsing continues after errors at the expense of accuracy", action='store_true')
 args = arg_parser.parse_args()
 
 def main():
@@ -191,7 +192,11 @@ class Parser(object):
                 return obj
             # If it's higher, than there's an error.
             elif field.level > level:
-                raise Exception("Indentation error!")
+                if args.strict:
+                    raise Exception("Indentation error! Expected level " + str(level) + " but field level is " + str(field.level))
+                else:
+                    print("Warning: Indentation error!")
+                    return obj
 
             # Increment the current field index.
             self._index += 1
