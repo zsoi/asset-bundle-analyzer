@@ -122,7 +122,7 @@ class Parser(object):
         # File id 0 is always the current file (we store only the base file name without .txt extension).
         self._external_references[0] = self._file_index.get_id(os.path.basename(filepath[:-4]))
 
-        with open(filepath) as f:
+        with open(filepath, "rt", encoding="utf-8") as f:
             line = f.readline()
             # Parse external references.
             if line == "External References\n":
@@ -141,7 +141,7 @@ class Parser(object):
                         global_index = self._file_index.get_id(file)
                         self._external_references[local_index] = global_index
 
-        with open(filepath) as f:
+        with open(filepath, "rt", encoding="utf-8") as f:
             data = f.read()
 
         # Parse the whole file, extract all objects.
