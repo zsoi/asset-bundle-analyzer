@@ -166,6 +166,7 @@ class Parser(object):
         self._fields = []
 
         # Parse line by line.
+        # Problem: Multi-line string data can span multiple lines in the file, this needs to be solved. Usually manifests through indentation exceptions
         for line in lines:
             # Every line is a potential field.
             field = self._parse_line(line)
