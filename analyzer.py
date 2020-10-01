@@ -349,6 +349,14 @@ class Parser(object):
                 Field("float", self.to_float(match.group(3))),
                 Field("float", self.to_float(match.group(4))),
             ]
+        elif typename == "RectOffset":
+            match = re.match(r"\((\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+) (\S+)\)", value)
+            return [
+                Field("int", int(match.group(2))),
+                Field("int", int(match.group(4))),
+                Field("int", int(match.group(6))),
+                Field("int", int(match.group(8))),
+            ]
         elif typename == "GUID":
             return uuid.UUID(value)
         else:
@@ -741,6 +749,7 @@ class BaseHandler(object):
             "Vector4f": 16,
             "Vector3f": 12,
             "Vector2f": 8,
+            "RectOffset": 16,
             "bool": 1, # TODO: check real serialized size of bool
             "GUID": 16,
         }
