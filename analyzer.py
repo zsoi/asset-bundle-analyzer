@@ -339,6 +339,12 @@ class Parser(object):
                 Field("float", self.to_float(match.group(1))),
                 Field("float", self.to_float(match.group(2))),
             ]
+        elif typename == "int2_storage":
+            match = re.match(r"\((\S+) (\S+)\)", value)
+            return [
+                Field("int", int(match.group(1))),
+                Field("int", int(match.group(2))),
+            ]
         elif typename == "bool":
             return int(value) == 1
         elif typename == "ColorRGBA":
@@ -749,6 +755,7 @@ class BaseHandler(object):
             "Vector4f": 16,
             "Vector3f": 12,
             "Vector2f": 8,
+            "int2_storage": 8,
             "RectOffset": 16,
             "bool": 1, # TODO: check real serialized size of bool
             "GUID": 16,
