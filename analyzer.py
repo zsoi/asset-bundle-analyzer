@@ -9,6 +9,7 @@ import argparse
 import subprocess
 import fnmatch
 import uuid
+import hashlib
 from multiprocessing import Process
 
 arg_parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -446,6 +447,14 @@ class ObjectProcessor(object):
 
             class_id = obj["ClassID"]
             typename = obj["Type"]
+            
+            objectHash = "0" * 32;
+
+            try:
+                objectHash = hashlib.md5( json.dumps(obj, cls=ExtendedUnityJSONEncoder).encode("utf-8")).hexdigest()
+            except Exception as e:
+                print("Could not compute hash of object: " + str(e))
+
 
             # If there's a m_GameObject PPtr field, get the id of the game object.
             game_object_pptr = obj["Content"].get("m_GameObject")
@@ -463,9 +472,9 @@ class ObjectProcessor(object):
 
             # Add object to database.
             cursor.execute('''
-                INSERT INTO objects(id, file, object_id, bundle_id, class_id, name, game_object, size, serialized_fields)
-                    VALUES(?,?,?,?,?,?,?,?,?)
-            ''', (current_id, file_id, object_id, bundle_id, class_id, name, game_object_id, size, serialized_fields))
+                INSERT INTO objects(id, file, object_id, bundle_id, class_id, name, game_object, size, serialized_fields, object_hash)
+                    VALUES(?,?,?,?,?,?,?,?,?,?)
+            ''', (current_id, file_id, object_id, bundle_id, class_id, name, game_object_id, size, serialized_fields, objectHash))
             
             # Also store the JSON object if requested.
             if store_raw:
@@ -529,6 +538,7 @@ class ObjectProcessor(object):
                 game_object INTEGER,
                 size INTEGER,
                 serialized_fields INTEGER,
+                object_hash TEXT,
                 PRIMARY KEY (id)
                 FOREIGN KEY (class_id) REFERENCES types(class_id)
                 FOREIGN KEY (bundle_id) REFERENCES asset_bundles(id)
@@ -536,7 +546,7 @@ class ObjectProcessor(object):
         ''')
         cursor.execute('''
             CREATE VIEW object_view AS
-            SELECT objects.id, objects.object_id, asset_bundles.name AS bundle, files.name AS file, objects.class_id, types.name AS type, objects.name, objects.game_object, objects.size,
+            SELECT objects.id, objects.object_id, asset_bundles.name AS bundle, files.name AS file, objects.class_id, types.name AS type, objects.name, objects.game_object, objects.size, objects.object_hash,
             CASE 
                 WHEN size < 1024 THEN printf("%!5.1f B", size * 1.0)
                 WHEN size >=  1024 AND size < (1024 * 1024) THEN printf("%!5.1f KB", size / 1024.0)
@@ -608,7 +618,7 @@ class ObjectProcessor(object):
             sum(size) AS size, name, type, REPLACE(GROUP_CONCAT(DISTINCT bundle), ",", CHAR(13)) AS in_bundles
             FROM object_view
             WHERE size > 0 AND NOT (type = "Texture2D" AND name LIKE ("Lightmap%_comp_light"))
-            GROUP BY name, type, size
+            GROUP BY object_hash, name, type, size
             HAVING instances > 1
             ORDER BY size DESC, instances DESC
         ''')
