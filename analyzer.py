@@ -469,7 +469,7 @@ class ObjectProcessor(object):
             
             # Also store the JSON object if requested.
             if store_raw:
-                json_obj = json.dumps(obj, indent=2)
+                json_obj = json.dumps(obj, indent=2, cls=ExtendedUnityJSONEncoder)
                 cursor.execute('''
                     INSERT INTO raw_objects(id, data, data_size)
                         VALUES(?,?,?)
@@ -1425,6 +1425,13 @@ class FileIndex(object):
             self._db.commit()
 
         return index
+
+class ExtendedUnityJSONEncoder(json.JSONEncoder):
+    def default(self, z):
+        if isinstance(z, uuid.UUID):
+            return (z.hex)
+        else:
+            return super().default(z)
 
 # if running in debug, function to trap stack when breaking 
 def debug_signal_handler(signal, frame):
